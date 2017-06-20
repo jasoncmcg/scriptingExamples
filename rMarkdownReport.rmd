@@ -1,0 +1,53 @@
+---
+title: "Example RMarkdown Report"
+author: "Jason McGinnis"
+date: \today
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(RODBC)
+library(ggplot2)
+library(dplyr)
+library(RColorBrewer)
+
+dbConnect <- odbcDriverConnect('DRIVER=Sql Server Native Client 11.0;Database=dbname-removed;Server=server-address-removed;Port=;PROTOCOL=TCPIP;UID=username-removed;PWD=password-removed')
+
+#-------Update Variables Here------------
+schoolName <- "Name of School"
+schoolZone <- "Name of zone"
+schoolYear <- "2015-2016"
+schoolCohort <- "2018"
+#----------------------------------------
+
+#Adding quotes to variables for queries
+schoolName <- paste("'", schoolName, "'", sep="")
+schoolZone <- paste("'", schoolZone, "'", sep="")
+schoolYear <- paste("'", schoolYear, "'", sep="")
+schoolCohort <- paste("'", schoolCohort, "'", sep="")
+
+#Define queries
+readinessCounts <- paste('Select School, SchoolYear, Cohort, Readiness, Count(Readiness) as CountReady  FROM [name-of-db-removed].[dbo].[name-of-view-removed] where school = ',schoolName,' Group By School, SchoolYear, Cohort, Readiness', sep="")
+
+```
+## Readiness Levels
+
+This shows the counts and totals for the readiness status of the students.
+
+```{r, echo = FALSE}
+dataResult <- sqlQuery(dbConnect, readinessCounts)
+
+colorList <- c("#f46d43", "#a6dba0")
+
+p <- ggplot(dataResult,aes(x=Readiness, y=CountReady, fill=Readiness))
+p + geom_bar(stat='identity') + scale_fill_manual(values=colorList) +
+  labs(title = "How Many Students are College Ready", y = "Number of Students")
+```
+
+Other information and dialog entered here...
+
+```{r finalize, include=FALSE}
+odbcClose(dbConnect)
+```
